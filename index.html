@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Harmonies Score Tracker</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌿</text></svg>">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <span class="brand-hex" aria-hidden="true"></span>
+      <div class="brand-text">
+        <h1>Harmonies</h1>
+        <p>Score Tracker</p>
+      </div>
+    </div>
+    <nav class="topnav">
+      <a class="nav-link" href="https://www.libellud.com/en/resources/harmonies/" target="_blank" rel="noopener">Rules</a>
+      <button class="nav-link" id="cheatsheet-toggle" type="button">Scoring Guide</button>
+      <button class="nav-link" id="export-btn" type="button">Export</button>
+      <button class="nav-link" id="import-btn" type="button">Import</button>
+      <input type="file" id="import-file" accept="application/json" hidden>
+      <button class="nav-link nav-link-danger" id="new-session-btn" type="button">New Session</button>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+  <!-- SETUP SCREEN -->
+  <section id="setup-screen" class="screen">
+    <div class="card setup-card">
+      <h2>Start a session</h2>
+      <p class="muted">Set up 2–4 players. Names and colors are remembered for next time.</p>
+
+      <div class="player-count-picker" role="group" aria-label="Number of players">
+        <button type="button" class="count-btn" data-count="2">2</button>
+        <button type="button" class="count-btn" data-count="3">3</button>
+        <button type="button" class="count-btn" data-count="4">4</button>
+      </div>
+
+      <div id="setup-players" class="setup-players"></div>
+
+      <button type="button" id="start-session-btn" class="btn btn-primary btn-block">Start Session</button>
+    </div>
+  </section>
+
+  <!-- TRACKER SCREEN -->
+  <section id="tracker-screen" class="screen" hidden>
+
+    <div class="card leaderboard" id="leaderboard"></div>
+
+    <div class="card new-game-card">
+      <div class="new-game-header">
+        <h2 id="game-number-heading">Record Game</h2>
+        <button type="button" id="toggle-breakdown-btn" class="btn btn-ghost btn-small">Detailed breakdown</button>
+      </div>
+      <div id="score-entry-rows" class="score-entry-rows"></div>
+      <div class="new-game-actions">
+        <button type="button" id="save-game-btn" class="btn btn-primary">Save Game</button>
+        <button type="button" id="edit-players-btn" class="btn btn-ghost btn-small">Edit players</button>
+      </div>
+    </div>
+
+    <div class="card cheatsheet" id="cheatsheet-panel" hidden>
+      <h2>Scoring quick reference</h2>
+      <p class="muted small">Base game scoring. Always double-check tricky spots against the <a href="https://www.libellud.com/en/resources/harmonies/" target="_blank" rel="noopener">official rules</a>.</p>
+      <div class="cheatsheet-grid">
+        <div class="cheat-item cheat-tree">
+          <h3>🌳 Trees</h3>
+          <p>1 / 2 / 3 stacked high &rarr; <strong>1 / 3 / 7</strong> pts each</p>
+        </div>
+        <div class="cheat-item cheat-mountain">
+          <h3>⛰️ Mountains</h3>
+          <p>1 / 2 / 3 stacked high &rarr; <strong>1 / 3 / 7</strong> pts each &mdash; only if next to another mountain group, else 0</p>
+        </div>
+        <div class="cheat-item cheat-field">
+          <h3>🌾 Fields</h3>
+          <p>Each separate group of 2+ &rarr; flat <strong>5</strong> pts, however big</p>
+        </div>
+        <div class="cheat-item cheat-water">
+          <h3>💧 River</h3>
+          <p>Length 2/3/4/5/6 &rarr; <strong>2/5/8/11/15</strong> pts, +4 per token beyond 6. Only your longest river counts.</p>
+        </div>
+        <div class="cheat-item cheat-building">
+          <h3>🏠 Buildings</h3>
+          <p>Flat <strong>5</strong> pts each, if surrounded by 3+ differently colored tokens</p>
+        </div>
+        <div class="cheat-item cheat-animal">
+          <h3>🦔 Animals &amp; Spirits</h3>
+          <p>Sum the printed value shown on each collected Animal card and Nature's Spirit card</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card history-card">
+      <h2>Session history</h2>
+      <div id="history-list" class="history-list"></div>
+      <p id="history-empty" class="muted small" hidden>No games recorded yet in this session.</p>
+    </div>
+
+  </section>
+
+</main>
+
+<footer>
+  <p>Runs entirely in your browser &mdash; scores are saved to this device only.</p>
+</footer>
+
+<template id="score-row-template">
+  <div class="score-row">
+    <div class="score-row-head">
+      <span class="player-swatch"></span>
+      <span class="player-name"></span>
+    </div>
+    <div class="score-row-total">
+      <label>Total score</label>
+      <input type="number" class="total-input" inputmode="numeric" placeholder="0">
+    </div>
+    <div class="score-breakdown" hidden>
+      <div class="bd-field">
+        <label>🌳 Trees size 1</label>
+        <input type="number" min="0" class="bd-input" data-key="tree1" placeholder="0">
+      </div>
+      <div class="bd-field">
+        <label>🌳 Trees size 2</label>
+        <input type="number" min="0" class="bd-input" data-key="tree2" placeholder="0">
+      </div>
+      <div class="bd-field">
+        <label>🌳 Trees size 3</label>
+        <input type="number" min="0" class="bd-input" data-key="tree3" placeholder="0">
+      </div>
+      <div class="bd-field">
+        <label>⛰️ Mountains size 1</label>
+        <input type="number" min="0" class="bd-input" data-key="mountain1" placeholder="0">
+      </div>
+      <div class="bd-field">
+        <label>⛰️ Mountains size 2</label>
+        <input type="number" min="0" class="bd-input" data-key="mountain2" placeholder="0">
+      </div>
+      <div class="bd-field">
+        <label>⛰️ Mountains size 3</label>
+        <input type="number" min="0" class="bd-input" data-key="mountain3" placeholder="0">
+      </div>
+      <div class="bd-field">
+        <label>🌾 Field groups</label>
+        <input type="number" min="0" class="bd-input" data-key="fields" placeholder="0">
+      </div>
+      <div class="bd-field">
+        <label>💧 Longest river</label>
+        <input type="number" min="0" class="bd-input" data-key="river" placeholder="0">
+      </div>
+      <div class="bd-field">
+        <label>🏠 Buildings</label>
+        <input type="number" min="0" class="bd-input" data-key="buildings" placeholder="0">
+      </div>
+      <div class="bd-field">
+        <label>🦔 Animal cards total</label>
+        <input type="number" min="0" class="bd-input" data-key="animals" placeholder="0">
+      </div>
+      <div class="bd-field">
+        <label>✨ Nature's Spirit total</label>
+        <input type="number" min="0" class="bd-input" data-key="spirits" placeholder="0">
+      </div>
+      <div class="bd-subtotal">Breakdown total: <strong class="bd-subtotal-value">0</strong></div>
+    </div>
+  </div>
+</template>
+
+<script src="app.js"></script>
+</body>
+</html>
