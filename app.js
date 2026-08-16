@@ -1,5 +1,35 @@
 (() => {
   "use strict";
+  // Auto-reload when a newer deploy is live, so an open tab never shows a stale
+  // cached copy. Skipped when running locally (no build step to fill in the version).
+  const metaVersion = document.querySelector('meta[name="app-version"]');
+  const currentVersion = metaVersion ? metaVersion.content : "";
+  if (currentVersion && currentVersion !== "__CACHE_VERSION__") {
+    const RELOAD_GUARD_KEY = "harmonies-reloaded-for-version";
+    const checkForUpdate = () => {
+      fetch("version.txt", { cache: "no-store" })
+        .then((res) => (res.ok ? res.text() : null))
+        .then((latest) => {
+          const latestVersion = latest && latest.trim();
+          if (!latestVersion || latestVersion === currentVersion) return;
+          // Cap at one reload attempt per detected version so a broken deploy
+          // (version.txt updated but index.html didn't change) can't loop forever.
+          if (sessionStorage.getItem(RELOAD_GUARD_KEY) === latestVersion) return;
+          sessionStorage.setItem(RELOAD_GUARD_KEY, latestVersion);
+          location.reload();
+        })
+        .catch(() => {});
+    };
+    checkForUpdate();
+    setInterval(checkForUpdate, 120000);
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) checkForUpdate();
+    });
+  }
+})();
+
+(() => {
+  "use strict";
 
   const STATE_KEY = "harmonies-tracker-session-v1";
   const SETUP_KEY = "harmonies-tracker-lastsetup-v1";
