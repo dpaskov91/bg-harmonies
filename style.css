@@ -102,7 +102,7 @@ main {
   padding: 1.4rem 1.2rem 3rem;
   display: flex;
   flex-direction: column;
-  gap: 1.2rem;
+  gap: 1.6rem;
 }
 
 .card {
@@ -195,11 +195,11 @@ main {
 .leaderboard {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 0.8rem;
+  gap: 1rem;
 }
 .player-card {
   border-radius: 12px;
-  padding: 0.9rem;
+  padding: 1rem;
   background: var(--bg-alt);
   border: 1px solid var(--border);
   position: relative;
@@ -223,57 +223,58 @@ main {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 0.8rem;
+  margin-bottom: 1rem;
   flex-wrap: wrap;
   gap: 0.5rem;
 }
 .player-swatch { width: 14px; height: 14px; border-radius: 50%; display: inline-block; }
 
-.score-table-wrap {
+/* Shared compact-table styling (score entry + session history) */
+.score-table-wrap,
+.history-table-wrap {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   border: 1px solid var(--border);
   border-radius: 10px;
 }
-.score-table {
+.mini-table {
   width: 100%;
   border-collapse: collapse;
   background: var(--bg-alt);
 }
-.score-table th,
-.score-table td {
-  padding: 0.4rem 0.5rem;
+.mini-table th,
+.mini-table td {
+  padding: 0.55rem 0.5rem;
   text-align: center;
   border-bottom: 1px solid var(--border);
   white-space: nowrap;
 }
-.score-table thead th {
+.mini-table thead th {
   font-size: 0.75rem;
   color: var(--ink-soft);
   font-weight: 700;
   background: var(--bg-alt);
 }
-.score-table th:first-child,
-.score-table td.row-label {
+.mini-table th:first-child,
+.mini-table td.row-label {
   text-align: left;
   position: sticky;
   left: 0;
   background: var(--bg-alt);
   z-index: 1;
 }
-.score-table thead th:first-child { z-index: 2; }
-.score-table .player-swatch { width: 9px; height: 9px; margin-right: 0.3rem; flex-shrink: 0; }
-.score-table thead th {
-  display: table-cell;
-}
-.score-table .player-name-short {
+.mini-table thead th:first-child { z-index: 2; }
+.mini-table .player-swatch { width: 9px; height: 9px; margin-right: 0.3rem; flex-shrink: 0; }
+.mini-table .player-name-short {
   display: inline-block;
   max-width: 84px;
   overflow: hidden;
   text-overflow: ellipsis;
   vertical-align: middle;
 }
-.score-table .row-label { font-size: 0.78rem; color: var(--ink-soft); max-width: 90px; overflow: hidden; text-overflow: ellipsis; }
+.mini-table .row-label { font-size: 0.78rem; color: var(--ink-soft); max-width: 90px; overflow: hidden; text-overflow: ellipsis; }
+
+/* Score entry table specifics */
 .score-table .row-total .row-label { color: var(--ink); font-weight: 700; }
 .score-table .row-subtotal .row-label { font-style: italic; }
 .score-table .bd-subtotal-value { font-weight: 700; }
@@ -289,6 +290,12 @@ main {
   background: var(--card-bg);
   color: var(--ink);
 }
+.score-table input.total-input[readonly] {
+  background: var(--bg-alt);
+  color: var(--ink-soft);
+  border-style: dashed;
+  cursor: default;
+}
 .score-table input.bd-input {
   font: inherit;
   font-size: 0.8rem;
@@ -301,15 +308,29 @@ main {
   color: var(--ink);
 }
 
+/* Session history table specifics */
+.history-table .row-game-num { display: block; font-weight: 700; color: var(--ink); font-size: 0.85rem; }
+.history-table .row-game-date { display: block; font-size: 0.68rem; color: var(--ink-soft); font-weight: 400; }
+.history-table .history-row { cursor: pointer; }
+.history-table .history-row:hover td.row-label,
+.history-table .history-row:hover { background: var(--border); }
+.history-table .cell-winner {
+  font-weight: 700;
+  color: var(--ink);
+  background: color-mix(in srgb, var(--field) 22%, var(--bg-alt));
+}
+.history-table .trophy { margin-right: 0.15rem; }
+.history-detail-row td { padding: 0; background: var(--card-bg); }
+
 @media (max-width: 480px) {
-  main { padding: 1rem 0.7rem 2.5rem; gap: 0.9rem; }
-  .card { padding: 0.9rem; }
-  .score-table th,
-  .score-table td { padding: 0.3rem 0.3rem; }
-  .score-table thead th { font-size: 0.68rem; }
-  .score-table .player-name-short { max-width: 46px; }
-  .score-table .player-swatch { width: 8px; height: 8px; margin-right: 0.2rem; }
-  .score-table .row-label { font-size: 0.68rem; max-width: 56px; }
+  main { padding: 1rem 0.7rem 2.5rem; gap: 1.2rem; }
+  .card { padding: 1rem; }
+  .mini-table th,
+  .mini-table td { padding: 0.42rem 0.3rem; }
+  .mini-table thead th { font-size: 0.68rem; }
+  .mini-table .player-name-short { max-width: 46px; }
+  .mini-table .player-swatch { width: 8px; height: 8px; margin-right: 0.2rem; }
+  .mini-table .row-label { font-size: 0.68rem; max-width: 56px; }
   .score-table input.total-input { width: 44px; font-size: 0.95rem; padding: 0.25rem; }
   .score-table input.bd-input { width: 32px; font-size: 0.7rem; padding: 0.2rem; }
 }
@@ -340,34 +361,9 @@ main {
 .cheat-item p { margin: 0; font-size: 0.85rem; color: var(--ink-soft); }
 
 /* History */
-.history-card h2 { margin-bottom: 0.6rem; }
-.history-list { display: flex; flex-direction: column; gap: 0.6rem; }
-.history-item {
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--bg-alt);
-}
-.history-item-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.65rem 0.9rem;
-  cursor: pointer;
-  gap: 0.6rem;
-  flex-wrap: wrap;
-}
-.history-item-title { font-weight: 700; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
-.history-item-scores { display: flex; gap: 0.5rem; flex-wrap: wrap; font-size: 0.85rem; color: var(--ink-soft); }
-.history-score-chip {
-  padding: 0.15rem 0.55rem;
-  border-radius: 999px;
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-}
-.history-score-chip.winner { font-weight: 700; color: var(--ink); border-color: var(--field); background: color-mix(in srgb, var(--field) 20%, var(--card-bg)); }
-.history-item-actions { display: flex; gap: 0.4rem; }
-.history-item-detail { padding: 0 0.9rem 0.8rem; font-size: 0.82rem; color: var(--ink-soft); }
-.history-item-detail table { width: 100%; border-collapse: collapse; margin-top: 0.4rem; }
+.history-card h2 { margin-bottom: 0.8rem; }
+.history-item-detail { padding: 0.7rem 0.9rem; font-size: 0.82rem; color: var(--ink-soft); }
+.history-item-detail table { width: 100%; border-collapse: collapse; }
 .history-item-detail th, .history-item-detail td { text-align: left; padding: 0.2rem 0.4rem; border-bottom: 1px solid var(--border); }
 .icon-btn {
   background: none;

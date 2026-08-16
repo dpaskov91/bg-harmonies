@@ -289,7 +289,6 @@
     BREAKDOWN_ROWS.forEach((rowDef) => {
       const tr = document.createElement("tr");
       tr.className = "row-breakdown";
-      tr.hidden = !breakdownVisible;
       const labelTd = document.createElement("td");
       labelTd.className = "row-label";
       labelTd.textContent = rowDef.label;
@@ -312,7 +311,6 @@
 
     const subtotalRow = document.createElement("tr");
     subtotalRow.className = "row-subtotal row-breakdown";
-    subtotalRow.hidden = !breakdownVisible;
     const subtotalLabelTd = document.createElement("td");
     subtotalLabelTd.className = "row-label";
     subtotalLabelTd.textContent = "Subtotal";
@@ -330,13 +328,24 @@
     tbody.appendChild(subtotalRow);
 
     table.appendChild(tbody);
+    applyBreakdownVisibility();
   }
 
-  let breakdownVisible = false;
-  $("#toggle-breakdown-btn").addEventListener("click", () => {
-    breakdownVisible = !breakdownVisible;
+  let breakdownVisible = true;
+
+  function applyBreakdownVisibility() {
     $("#toggle-breakdown-btn").textContent = breakdownVisible ? "Hide breakdown" : "Detailed breakdown";
     $$(".row-breakdown", $("#score-table")).forEach((row) => (row.hidden = !breakdownVisible));
+    // When the breakdown is open, Total is computed from it, not typed directly.
+    Object.keys(totalInputs).forEach((playerId) => {
+      totalInputs[playerId].readOnly = breakdownVisible;
+      if (breakdownVisible) updateBreakdownForPlayer(playerId);
+    });
+  }
+
+  $("#toggle-breakdown-btn").addEventListener("click", () => {
+    breakdownVisible = !breakdownVisible;
+    applyBreakdownVisibility();
   });
 
   $("#save-game-btn").addEventListener("click", () => {
@@ -373,8 +382,6 @@
     });
     saveState(state);
 
-    breakdownVisible = false;
-    $("#toggle-breakdown-btn").textContent = "Detailed breakdown";
     renderScoreEntryTable();
     renderLeaderboard();
     renderHistory();
@@ -421,16 +428,62 @@
 
   const expandedGames = new Set();
 
+  function buildBreakdownDetailHtml(game) {
+    const hasAnyBreakdown = state.players.some((p) => game.breakdowns[p.id]);
+    if (!hasAnyBreakdown) {
+      return `<div class="history-item-detail">No detailed breakdown recorded for this game.</div>`;
+    }
+    const rows = state.players.map((p) => {
+      const bd = game.breakdowns[p.id];
+      if (!bd) return `<tr><td>${escapeHtml(p.name)}</td><td colspan="6">total only</td></tr>`;
+      return `<tr>
+        <td>${escapeHtml(p.name)}</td>
+        <td>🌳 ${(bd.tree1||0)}/${(bd.tree2||0)}/${(bd.tree3||0)}</td>
+        <td>⛰️ ${(bd.mountain1||0)}/${(bd.mountain2||0)}/${(bd.mountain3||0)}</td>
+        <td>🌾 ${bd.fields||0}</td>
+        <td>💧 ${bd.river||0}</td>
+        <td>🏠 ${bd.buildings||0}</td>
+        <td>🦔✨ ${(bd.animals||0)+(bd.spirits||0)}</td>
+      </tr>`;
+    }).join("");
+    return `<div class="history-item-detail"><table>
+      <thead><tr><th>Player</th><th>Trees</th><th>Mtns</th><th>Fields</th><th>River</th><th>Bldgs</th><th>Animals+Spirit</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>`;
+  }
+
   function renderHistory() {
-    const list = $("#history-list");
+    const table = $("#history-table");
     const empty = $("#history-empty");
-    list.innerHTML = "";
+    table.innerHTML = "";
 
     if (!state.games.length) {
       empty.hidden = false;
       return;
     }
     empty.hidden = true;
+
+    const thead = document.createElement("thead");
+    const headRow = document.createElement("tr");
+    headRow.appendChild(document.createElement("th"));
+    state.players.forEach((player) => {
+      const th = document.createElement("th");
+      th.title = player.name;
+      const swatch = document.createElement("span");
+      swatch.className = "player-swatch";
+      swatch.style.background = colorHex(player.color);
+      const nameSpan = document.createElement("span");
+      nameSpan.className = "player-name-short";
+      nameSpan.textContent = player.name;
+      th.appendChild(swatch);
+      th.appendChild(nameSpan);
+      headRow.appendChild(th);
+    });
+    headRow.appendChild(document.createElement("th"));
+    thead.appendChild(headRow);
+    table.appendChild(thead);
+
+    const tbody = document.createElement("tbody");
 
     [...state.games].reverse().forEach((game, revIdx) => {
       const gameNumber = state.games.length - revIdx;
@@ -439,32 +492,34 @@
       const dateStr = date.toLocaleDateString(undefined, { month: "short", day: "numeric" }) +
         " " + date.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
 
-      const item = document.createElement("div");
-      item.className = "history-item";
+      const row = document.createElement("tr");
+      row.className = "history-row";
 
-      const head = document.createElement("div");
-      head.className = "history-item-head";
-      head.innerHTML = `
-        <div class="history-item-title">Game ${gameNumber} <span class="muted small">· ${dateStr}</span></div>
-        <div class="history-item-scores">
-          ${state.players.map((p) => {
-            const s = game.scores[p.id] || 0;
-            const isWinner = s === max && max > 0;
-            return `<span class="history-score-chip${isWinner ? " winner" : ""}">${escapeHtml(p.name)}: ${s}</span>`;
-          }).join("")}
-        </div>
-        <div class="history-item-actions">
-          <button type="button" class="icon-btn delete-game-btn" title="Delete this game">🗑</button>
-        </div>
-      `;
-      head.addEventListener("click", (e) => {
-        if (e.target.closest(".delete-game-btn")) return;
-        if (expandedGames.has(game.id)) expandedGames.delete(game.id);
-        else expandedGames.add(game.id);
-        renderHistory();
+      const labelTd = document.createElement("td");
+      labelTd.className = "row-label";
+      labelTd.innerHTML = `<span class="row-game-num">G${gameNumber}</span><span class="row-game-date">${dateStr}</span>`;
+      row.appendChild(labelTd);
+
+      state.players.forEach((player) => {
+        const td = document.createElement("td");
+        const score = game.scores[player.id] || 0;
+        const isWinner = score === max && max > 0;
+        if (isWinner) {
+          td.className = "cell-winner";
+          td.innerHTML = `<span class="trophy">🏆</span>${score}`;
+        } else {
+          td.textContent = String(score);
+        }
+        row.appendChild(td);
       });
 
-      head.querySelector(".delete-game-btn").addEventListener("click", (e) => {
+      const actionsTd = document.createElement("td");
+      const deleteBtn = document.createElement("button");
+      deleteBtn.type = "button";
+      deleteBtn.className = "icon-btn delete-game-btn";
+      deleteBtn.title = "Delete this game";
+      deleteBtn.textContent = "🗑";
+      deleteBtn.addEventListener("click", (e) => {
         e.stopPropagation();
         if (!confirm(`Delete Game ${gameNumber}? This can't be undone.`)) return;
         state.games = state.games.filter((g) => g.id !== game.id);
@@ -472,39 +527,30 @@
         renderLeaderboard();
         renderHistory();
       });
+      actionsTd.appendChild(deleteBtn);
+      row.appendChild(actionsTd);
 
-      item.appendChild(head);
+      row.addEventListener("click", (e) => {
+        if (e.target.closest(".delete-game-btn")) return;
+        if (expandedGames.has(game.id)) expandedGames.delete(game.id);
+        else expandedGames.add(game.id);
+        renderHistory();
+      });
+
+      tbody.appendChild(row);
 
       if (expandedGames.has(game.id)) {
-        const hasAnyBreakdown = state.players.some((p) => game.breakdowns[p.id]);
-        const detail = document.createElement("div");
-        detail.className = "history-item-detail";
-        if (!hasAnyBreakdown) {
-          detail.textContent = "No detailed breakdown recorded for this game.";
-        } else {
-          const rows = state.players.map((p) => {
-            const bd = game.breakdowns[p.id];
-            if (!bd) return `<tr><td>${escapeHtml(p.name)}</td><td colspan="6">total only</td></tr>`;
-            return `<tr>
-              <td>${escapeHtml(p.name)}</td>
-              <td>🌳 ${(bd.tree1||0)}/${(bd.tree2||0)}/${(bd.tree3||0)}</td>
-              <td>⛰️ ${(bd.mountain1||0)}/${(bd.mountain2||0)}/${(bd.mountain3||0)}</td>
-              <td>🌾 ${bd.fields||0}</td>
-              <td>💧 ${bd.river||0}</td>
-              <td>🏠 ${bd.buildings||0}</td>
-              <td>🦔✨ ${(bd.animals||0)+(bd.spirits||0)}</td>
-            </tr>`;
-          }).join("");
-          detail.innerHTML = `<table>
-            <thead><tr><th>Player</th><th>Trees</th><th>Mtns</th><th>Fields</th><th>River</th><th>Bldgs</th><th>Animals+Spirit</th></tr></thead>
-            <tbody>${rows}</tbody>
-          </table>`;
-        }
-        item.appendChild(detail);
+        const detailRow = document.createElement("tr");
+        detailRow.className = "history-detail-row";
+        const detailTd = document.createElement("td");
+        detailTd.colSpan = state.players.length + 2;
+        detailTd.innerHTML = buildBreakdownDetailHtml(game);
+        detailRow.appendChild(detailTd);
+        tbody.appendChild(detailRow);
       }
-
-      list.appendChild(item);
     });
+
+    table.appendChild(tbody);
   }
 
   // ---------- Cheatsheet ----------
