@@ -154,11 +154,20 @@
 
   // ---------- Tracker screen ----------
 
-  const BREAKDOWN_KEYS = [
-    "tree1", "tree2", "tree3",
-    "mountain1", "mountain2", "mountain3",
-    "fields", "river", "buildings", "animals", "spirits",
+  const BREAKDOWN_ROWS = [
+    { key: "tree1", label: "🌳 Trees size 1" },
+    { key: "tree2", label: "🌳 Trees size 2" },
+    { key: "tree3", label: "🌳 Trees size 3" },
+    { key: "mountain1", label: "⛰️ Mountains size 1" },
+    { key: "mountain2", label: "⛰️ Mountains size 2" },
+    { key: "mountain3", label: "⛰️ Mountains size 3" },
+    { key: "fields", label: "🌾 Field groups" },
+    { key: "river", label: "💧 Longest river" },
+    { key: "buildings", label: "🏠 Buildings" },
+    { key: "animals", label: "🦔 Animal cards total" },
+    { key: "spirits", label: "✨ Nature's Spirit total" },
   ];
+  const BREAKDOWN_KEYS = BREAKDOWN_ROWS.map((r) => r.key);
 
   function pointsForStack(n) {
     return n === 1 ? 1 : n === 2 ? 3 : n === 3 ? 7 : 0;
@@ -187,46 +196,111 @@
     return total;
   }
 
-  let rowRefs = {}; // playerId -> { totalInput, breakdownEl, bdInputs, subtotalEl }
+  let totalInputs = {}; // playerId -> input
+  let bdInputsByPlayer = {}; // playerId -> { key: input }
+  let subtotalEls = {}; // playerId -> span
 
-  function renderScoreEntryRows() {
-    const container = $("#score-entry-rows");
-    const template = $("#score-row-template");
-    container.innerHTML = "";
-    rowRefs = {};
+  function updateBreakdownForPlayer(playerId) {
+    const bd = {};
+    BREAKDOWN_KEYS.forEach((k) => (bd[k] = Number(bdInputsByPlayer[playerId][k].value) || 0));
+    const total = computeBreakdownTotal(bd);
+    subtotalEls[playerId].textContent = String(total);
+    totalInputs[playerId].value = total;
+  }
 
+  function renderScoreEntryTable() {
+    const table = $("#score-table");
+    table.innerHTML = "";
+    totalInputs = {};
+    bdInputsByPlayer = {};
+    subtotalEls = {};
+
+    const thead = document.createElement("thead");
+    const headRow = document.createElement("tr");
+    headRow.appendChild(document.createElement("th"));
     state.players.forEach((player) => {
-      const node = template.content.cloneNode(true);
-      const row = node.querySelector(".score-row");
-      node.querySelector(".player-swatch").style.background = colorHex(player.color);
-      node.querySelector(".player-name").textContent = player.name;
-
-      const totalInput = node.querySelector(".total-input");
-      const breakdownEl = node.querySelector(".score-breakdown");
-      const subtotalEl = node.querySelector(".bd-subtotal-value");
-      const bdInputs = {};
-
-      $$(".bd-input", node).forEach((inp) => {
-        bdInputs[inp.dataset.key] = inp;
-        inp.addEventListener("input", () => {
-          const bd = {};
-          BREAKDOWN_KEYS.forEach((k) => (bd[k] = Number(bdInputs[k].value) || 0));
-          const total = computeBreakdownTotal(bd);
-          subtotalEl.textContent = String(total);
-          totalInput.value = total;
-        });
-      });
-
-      container.appendChild(node);
-      rowRefs[player.id] = { totalInput, breakdownEl, bdInputs, subtotalEl };
+      const th = document.createElement("th");
+      const swatch = document.createElement("span");
+      swatch.className = "player-swatch";
+      swatch.style.background = colorHex(player.color);
+      th.appendChild(swatch);
+      th.appendChild(document.createTextNode(player.name));
+      headRow.appendChild(th);
     });
+    thead.appendChild(headRow);
+    table.appendChild(thead);
+
+    const tbody = document.createElement("tbody");
+
+    const totalRow = document.createElement("tr");
+    totalRow.className = "row-total";
+    const totalLabelTd = document.createElement("td");
+    totalLabelTd.className = "row-label";
+    totalLabelTd.textContent = "Total score";
+    totalRow.appendChild(totalLabelTd);
+    state.players.forEach((player) => {
+      const td = document.createElement("td");
+      const input = document.createElement("input");
+      input.type = "number";
+      input.inputMode = "numeric";
+      input.placeholder = "0";
+      input.className = "total-input";
+      td.appendChild(input);
+      totalRow.appendChild(td);
+      totalInputs[player.id] = input;
+      bdInputsByPlayer[player.id] = {};
+    });
+    tbody.appendChild(totalRow);
+
+    BREAKDOWN_ROWS.forEach((rowDef) => {
+      const tr = document.createElement("tr");
+      tr.className = "row-breakdown";
+      tr.hidden = !breakdownVisible;
+      const labelTd = document.createElement("td");
+      labelTd.className = "row-label";
+      labelTd.textContent = rowDef.label;
+      tr.appendChild(labelTd);
+      state.players.forEach((player) => {
+        const td = document.createElement("td");
+        const input = document.createElement("input");
+        input.type = "number";
+        input.min = "0";
+        input.placeholder = "0";
+        input.className = "bd-input";
+        input.addEventListener("input", () => updateBreakdownForPlayer(player.id));
+        td.appendChild(input);
+        tr.appendChild(td);
+        bdInputsByPlayer[player.id][rowDef.key] = input;
+      });
+      tbody.appendChild(tr);
+    });
+
+    const subtotalRow = document.createElement("tr");
+    subtotalRow.className = "row-subtotal row-breakdown";
+    subtotalRow.hidden = !breakdownVisible;
+    const subtotalLabelTd = document.createElement("td");
+    subtotalLabelTd.className = "row-label";
+    subtotalLabelTd.textContent = "Breakdown total";
+    subtotalRow.appendChild(subtotalLabelTd);
+    state.players.forEach((player) => {
+      const td = document.createElement("td");
+      const span = document.createElement("span");
+      span.className = "bd-subtotal-value";
+      span.textContent = "0";
+      td.appendChild(span);
+      subtotalRow.appendChild(td);
+      subtotalEls[player.id] = span;
+    });
+    tbody.appendChild(subtotalRow);
+
+    table.appendChild(tbody);
   }
 
   let breakdownVisible = false;
   $("#toggle-breakdown-btn").addEventListener("click", () => {
     breakdownVisible = !breakdownVisible;
     $("#toggle-breakdown-btn").textContent = breakdownVisible ? "Hide breakdown" : "Detailed breakdown";
-    Object.values(rowRefs).forEach((r) => (r.breakdownEl.hidden = !breakdownVisible));
+    $$(".row-breakdown", $("#score-table")).forEach((row) => (row.hidden = !breakdownVisible));
   });
 
   $("#save-game-btn").addEventListener("click", () => {
@@ -235,15 +309,15 @@
     let anyFilled = false;
 
     state.players.forEach((player) => {
-      const ref = rowRefs[player.id];
-      const total = Number(ref.totalInput.value);
-      if (ref.totalInput.value !== "" && !Number.isNaN(total)) anyFilled = true;
+      const totalInput = totalInputs[player.id];
+      const total = Number(totalInput.value);
+      if (totalInput.value !== "" && !Number.isNaN(total)) anyFilled = true;
       scores[player.id] = Number.isNaN(total) ? 0 : total;
 
       const bd = {};
       let hasBreakdown = false;
       BREAKDOWN_KEYS.forEach((k) => {
-        const v = Number(ref.bdInputs[k].value) || 0;
+        const v = Number(bdInputsByPlayer[player.id][k].value) || 0;
         bd[k] = v;
         if (v) hasBreakdown = true;
       });
@@ -263,9 +337,9 @@
     });
     saveState(state);
 
-    renderScoreEntryRows();
     breakdownVisible = false;
     $("#toggle-breakdown-btn").textContent = "Detailed breakdown";
+    renderScoreEntryTable();
     renderLeaderboard();
     renderHistory();
   });
@@ -456,7 +530,7 @@
   function showTracker() {
     $("#setup-screen").hidden = true;
     $("#tracker-screen").hidden = false;
-    renderScoreEntryRows();
+    renderScoreEntryTable();
     renderLeaderboard();
     renderHistory();
   }

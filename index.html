@@ -59,7 +59,9 @@
         <h2 id="game-number-heading">Record Game</h2>
         <button type="button" id="toggle-breakdown-btn" class="btn btn-ghost btn-small">Detailed breakdown</button>
       </div>
-      <div id="score-entry-rows" class="score-entry-rows"></div>
+      <div class="score-table-wrap">
+        <table class="score-table" id="score-table"></table>
+      </div>
       <div class="new-game-actions">
         <button type="button" id="save-game-btn" class="btn btn-primary">Save Game</button>
         <button type="button" id="edit-players-btn" class="btn btn-ghost btn-small">Edit players</button>
@@ -110,66 +112,6 @@
 <footer>
   <p>Runs entirely in your browser &mdash; scores are saved to this device only.</p>
 </footer>
-
-<template id="score-row-template">
-  <div class="score-row">
-    <div class="score-row-head">
-      <span class="player-swatch"></span>
-      <span class="player-name"></span>
-    </div>
-    <div class="score-row-total">
-      <label>Total score</label>
-      <input type="number" class="total-input" inputmode="numeric" placeholder="0">
-    </div>
-    <div class="score-breakdown" hidden>
-      <div class="bd-field">
-        <label>🌳 Trees size 1</label>
-        <input type="number" min="0" class="bd-input" data-key="tree1" placeholder="0">
-      </div>
-      <div class="bd-field">
-        <label>🌳 Trees size 2</label>
-        <input type="number" min="0" class="bd-input" data-key="tree2" placeholder="0">
-      </div>
-      <div class="bd-field">
-        <label>🌳 Trees size 3</label>
-        <input type="number" min="0" class="bd-input" data-key="tree3" placeholder="0">
-      </div>
-      <div class="bd-field">
-        <label>⛰️ Mountains size 1</label>
-        <input type="number" min="0" class="bd-input" data-key="mountain1" placeholder="0">
-      </div>
-      <div class="bd-field">
-        <label>⛰️ Mountains size 2</label>
-        <input type="number" min="0" class="bd-input" data-key="mountain2" placeholder="0">
-      </div>
-      <div class="bd-field">
-        <label>⛰️ Mountains size 3</label>
-        <input type="number" min="0" class="bd-input" data-key="mountain3" placeholder="0">
-      </div>
-      <div class="bd-field">
-        <label>🌾 Field groups</label>
-        <input type="number" min="0" class="bd-input" data-key="fields" placeholder="0">
-      </div>
-      <div class="bd-field">
-        <label>💧 Longest river</label>
-        <input type="number" min="0" class="bd-input" data-key="river" placeholder="0">
-      </div>
-      <div class="bd-field">
-        <label>🏠 Buildings</label>
-        <input type="number" min="0" class="bd-input" data-key="buildings" placeholder="0">
-      </div>
-      <div class="bd-field">
-        <label>🦔 Animal cards total</label>
-        <input type="number" min="0" class="bd-input" data-key="animals" placeholder="0">
-      </div>
-      <div class="bd-field">
-        <label>✨ Nature's Spirit total</label>
-        <input type="number" min="0" class="bd-input" data-key="spirits" placeholder="0">
-      </div>
-      <div class="bd-subtotal">Breakdown total: <strong class="bd-subtotal-value">0</strong></div>
-    </div>
-  </div>
-</template>
 
 <script src="app.js"></script>
 </body>
