@@ -155,17 +155,17 @@
   // ---------- Tracker screen ----------
 
   const BREAKDOWN_ROWS = [
-    { key: "tree1", label: "🌳 Trees size 1" },
-    { key: "tree2", label: "🌳 Trees size 2" },
-    { key: "tree3", label: "🌳 Trees size 3" },
-    { key: "mountain1", label: "⛰️ Mountains size 1" },
-    { key: "mountain2", label: "⛰️ Mountains size 2" },
-    { key: "mountain3", label: "⛰️ Mountains size 3" },
-    { key: "fields", label: "🌾 Field groups" },
-    { key: "river", label: "💧 Longest river" },
-    { key: "buildings", label: "🏠 Buildings" },
-    { key: "animals", label: "🦔 Animal cards total" },
-    { key: "spirits", label: "✨ Nature's Spirit total" },
+    { key: "tree1", label: "🌳 Trees 1", full: "Trees size 1" },
+    { key: "tree2", label: "🌳 Trees 2", full: "Trees size 2" },
+    { key: "tree3", label: "🌳 Trees 3", full: "Trees size 3" },
+    { key: "mountain1", label: "⛰️ Mtns 1", full: "Mountains size 1" },
+    { key: "mountain2", label: "⛰️ Mtns 2", full: "Mountains size 2" },
+    { key: "mountain3", label: "⛰️ Mtns 3", full: "Mountains size 3" },
+    { key: "fields", label: "🌾 Fields", full: "Field groups" },
+    { key: "river", label: "💧 River", full: "Longest river" },
+    { key: "buildings", label: "🏠 Bldgs", full: "Buildings" },
+    { key: "animals", label: "🦔 Animals", full: "Animal cards total" },
+    { key: "spirits", label: "✨ Spirits", full: "Nature's Spirit total" },
   ];
   const BREAKDOWN_KEYS = BREAKDOWN_ROWS.map((r) => r.key);
 
@@ -220,11 +220,15 @@
     headRow.appendChild(document.createElement("th"));
     state.players.forEach((player) => {
       const th = document.createElement("th");
+      th.title = player.name;
       const swatch = document.createElement("span");
       swatch.className = "player-swatch";
       swatch.style.background = colorHex(player.color);
+      const nameSpan = document.createElement("span");
+      nameSpan.className = "player-name-short";
+      nameSpan.textContent = player.name;
       th.appendChild(swatch);
-      th.appendChild(document.createTextNode(player.name));
+      th.appendChild(nameSpan);
       headRow.appendChild(th);
     });
     thead.appendChild(headRow);
@@ -236,7 +240,7 @@
     totalRow.className = "row-total";
     const totalLabelTd = document.createElement("td");
     totalLabelTd.className = "row-label";
-    totalLabelTd.textContent = "Total score";
+    totalLabelTd.textContent = "Total";
     totalRow.appendChild(totalLabelTd);
     state.players.forEach((player) => {
       const td = document.createElement("td");
@@ -259,6 +263,7 @@
       const labelTd = document.createElement("td");
       labelTd.className = "row-label";
       labelTd.textContent = rowDef.label;
+      labelTd.title = rowDef.full;
       tr.appendChild(labelTd);
       state.players.forEach((player) => {
         const td = document.createElement("td");
@@ -280,7 +285,8 @@
     subtotalRow.hidden = !breakdownVisible;
     const subtotalLabelTd = document.createElement("td");
     subtotalLabelTd.className = "row-label";
-    subtotalLabelTd.textContent = "Breakdown total";
+    subtotalLabelTd.textContent = "Subtotal";
+    subtotalLabelTd.title = "Breakdown total";
     subtotalRow.appendChild(subtotalLabelTd);
     state.players.forEach((player) => {
       const td = document.createElement("td");

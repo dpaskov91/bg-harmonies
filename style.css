@@ -242,13 +242,13 @@ main {
 }
 .score-table th,
 .score-table td {
-  padding: 0.5rem 0.6rem;
+  padding: 0.4rem 0.5rem;
   text-align: center;
   border-bottom: 1px solid var(--border);
   white-space: nowrap;
 }
 .score-table thead th {
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   color: var(--ink-soft);
   font-weight: 700;
   background: var(--bg-alt);
@@ -262,18 +262,28 @@ main {
   z-index: 1;
 }
 .score-table thead th:first-child { z-index: 2; }
-.score-table .player-swatch { width: 10px; height: 10px; margin-right: 0.35rem; }
-.score-table .row-label { font-size: 0.8rem; color: var(--ink-soft); }
+.score-table .player-swatch { width: 9px; height: 9px; margin-right: 0.3rem; flex-shrink: 0; }
+.score-table thead th {
+  display: table-cell;
+}
+.score-table .player-name-short {
+  display: inline-block;
+  max-width: 84px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+}
+.score-table .row-label { font-size: 0.78rem; color: var(--ink-soft); max-width: 90px; overflow: hidden; text-overflow: ellipsis; }
 .score-table .row-total .row-label { color: var(--ink); font-weight: 700; }
 .score-table .row-subtotal .row-label { font-style: italic; }
 .score-table .bd-subtotal-value { font-weight: 700; }
 .score-table input.total-input {
   font: inherit;
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   font-weight: 700;
-  width: 72px;
+  width: 62px;
   text-align: center;
-  padding: 0.35rem;
+  padding: 0.3rem;
   border-radius: 6px;
   border: 1px solid var(--border);
   background: var(--card-bg);
@@ -281,14 +291,27 @@ main {
 }
 .score-table input.bd-input {
   font: inherit;
-  font-size: 0.85rem;
-  width: 56px;
+  font-size: 0.8rem;
+  width: 46px;
   text-align: center;
-  padding: 0.3rem;
+  padding: 0.25rem;
   border-radius: 6px;
   border: 1px solid var(--border);
   background: var(--card-bg);
   color: var(--ink);
+}
+
+@media (max-width: 480px) {
+  main { padding: 1rem 0.7rem 2.5rem; gap: 0.9rem; }
+  .card { padding: 0.9rem; }
+  .score-table th,
+  .score-table td { padding: 0.3rem 0.3rem; }
+  .score-table thead th { font-size: 0.68rem; }
+  .score-table .player-name-short { max-width: 46px; }
+  .score-table .player-swatch { width: 8px; height: 8px; margin-right: 0.2rem; }
+  .score-table .row-label { font-size: 0.68rem; max-width: 56px; }
+  .score-table input.total-input { width: 44px; font-size: 0.95rem; padding: 0.25rem; }
+  .score-table input.bd-input { width: 32px; font-size: 0.7rem; padding: 0.2rem; }
 }
 
 .new-game-actions { display: flex; align-items: center; gap: 0.7rem; margin-top: 1rem; }
